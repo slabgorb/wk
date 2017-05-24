@@ -1,0 +1,14 @@
+command:fetch
+  url:https://dl.dropboxusercontent.com/s/yt7gvcdc0tihbfz/inventory.tsv?dl=0
+  file:local.tsv  
+
+parallel:to_json
+  tsvfile:local.tsv
+  file:local.json
+
+parallel:aggregation
+  tsvfile:local.tsv
+  file:aggregations.json
+
+
+  
