@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/slabgorb/wk/workflow"
 )
@@ -30,7 +31,7 @@ func main() {
 	}
 	fmt.Println("done parsing")
 	for _, step := range steps.List {
-		fmt.Println(step.Command, step.Arguments)
+		fmt.Printf("%s, %s\n", step.Command, strings.Trim(fmt.Sprintf("%v", step.Arguments), "map[]"))
 	}
 	b, err := steps.Run()
 	if err != nil {

@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+// this is just for the purposes of this exercise, in an actual app
+// this may be another argument in the workflow DSL
 const InterestingColumn = "Volume 2015"
 
 type commandFunc func(args map[string]string) (int, error)
@@ -30,6 +32,9 @@ func checkArg(key string, args map[string]string) (string, error) {
 	return value, nil
 }
 
+// fetchCommand gets a file from the interwebs then saves it locally
+// for further processing. Unlike other commands, we are uninterested
+// in the byte count of the operation's output file.
 func fetchCommand(args map[string]string) (int, error) {
 	var url, file string
 	url, err := checkArg("url", args)
@@ -57,16 +62,18 @@ func fetchCommand(args map[string]string) (int, error) {
 			}
 		}
 		defer response.Body.Close()
-		b, err := io.Copy(output, response.Body)
+		_, err = io.Copy(output, response.Body)
 		if err != nil {
 			return 0, err
 		}
-		return int(b), nil
+		return 0, nil // bytes should not be counted towards total for purposes of this exercise
 		break
 	}
 	return 0, nil
 }
 
+// Median returns the median value for a list. If the list is empty,
+// Median returns NaN.
 func Median(values []float64) float64 {
 	if len(values) == 0 {
 		return math.NaN()
@@ -82,6 +89,15 @@ func Median(values []float64) float64 {
 
 }
 
+func getData(tsvFile string) ([]map[string]string, error) {
+	reader, err := LoadFile(tsvFile)
+	if err != nil {
+		return nil, err
+	}
+	return ReadTSV(reader)
+}
+
+// toJsonCommand converts a local TSV file to Json.
 func toJsonCommand(args map[string]string) (int, error) {
 	file, err := checkArg("file", args)
 	if err != nil {
@@ -91,8 +107,10 @@ func toJsonCommand(args map[string]string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	reader, err := LoadFile(tsvFile)
-	data, err := ReadTSV(reader)
+	data, err := getData(tsvFile)
+	if err != nil {
+		return 0, err
+	}
 	fout, err := os.Create(file)
 	if err != nil {
 		return 0, err
@@ -111,6 +129,8 @@ func toJsonCommand(args map[string]string) (int, error) {
 	return b, nil
 }
 
+// aggregationCommand reads a local TSV file, gets min, max, and
+// median values, and saves that to a local json file.
 func aggregationCommand(args map[string]string) (int, error) {
 	file, err := checkArg("file", args)
 	if err != nil {
@@ -120,12 +140,10 @@ func aggregationCommand(args map[string]string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	reader, err := LoadFile(tsvFile)
-	data, err := ReadTSV(reader)
+	data, err := getData(tsvFile)
 	if err != nil {
 		return 0, err
 	}
-
 	if len(data) < 2 {
 		return 0, fmt.Errorf("no data read")
 	}

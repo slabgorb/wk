@@ -3,25 +3,30 @@ package workflow
 import (
 	"fmt"
 	"log"
-	"sync"
 )
 
 type Step struct {
 	Command   string
 	Arguments map[string]string
 	Parallel  bool
-	lineNo    int
+	LineNo    int
 	err       string
 }
 type Steps struct {
 	List []Step
+	b    chan int
+	e    chan string
 }
 
-func (s Step) Error() string {
-	return fmt.Sprintf("Error running step %s line %d: %s", s.Command, s.lineNo, s.err)
+func (s *Step) SetError(errMessage string) {
+	s.err = errMessage
 }
 
-func (s Step) Run() (int, error) {
+func (s *Step) Error() string {
+	return fmt.Sprintf("error running step %s line %d: %s", s.Command, s.LineNo, s.err)
+}
+
+func (s *Step) Run() (int, error) {
 	log.Println("Running", s.Command)
 	f, ok := commandList[s.Command]
 	if !ok {
@@ -42,39 +47,35 @@ func (steps Steps) waitCount() int {
 }
 
 func (steps Steps) Run() (int, error) {
-	var wg sync.WaitGroup
-	wg.Add(steps.waitCount())
-	errs := make(chan string, steps.waitCount())
 	totalBytes := 0
-	var errorState string
-	by := make(chan int, steps.waitCount())
-	go func() {
-		totalBytes += <-by
-	}()
-	go func() {
-		errorState = <-errs
-	}()
+	done := make(chan struct{})
 	for _, step := range steps.List {
-		if errorState != "" {
-			return 0, fmt.Errorf(errorState)
-		}
 		if step.Parallel {
 			go func(s Step) {
-				defer wg.Done()
 				b, err := s.Run()
 				if err != nil {
-					errs <- err.Error()
+					steps.e <- err.Error()
 				}
-				by <- b
+				steps.b <- b
 			}(step)
 		} else {
 			b, err := step.Run()
 			if err != nil {
-				return 0, err
+				steps.e <- err.Error()
 			}
-			totalBytes += b
+			steps.b <- b
 		}
 	}
-	wg.Wait()
+	var errMessage string
+	for i := 0; i < len(steps.List); i++ {
+		select {
+		case b := <-steps.b:
+			totalBytes += b
+		case errMessage = <-steps.e:
+			return 0, fmt.Errorf(errMessage)
+		case <-done:
+			return totalBytes, nil
+		}
+	}
 	return totalBytes, nil
 }

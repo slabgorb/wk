@@ -31,7 +31,7 @@ func parseCommand(line string, lineNo int, rawLine string, parallel bool) (*Step
 	if len(splits) != 2 || splits[1] == "" {
 		return nil, fmt.Errorf("parsing error at line %d, '%s' malformed command", lineNo, rawLine)
 	}
-	step := &Step{Command: splits[1], lineNo: lineNo, Arguments: make(map[string]string), Parallel: parallel}
+	step := &Step{Command: splits[1], LineNo: lineNo, Arguments: make(map[string]string), Parallel: parallel}
 	return step, nil
 }
 
@@ -82,5 +82,7 @@ func ParseSteps(reader io.Reader) (*Steps, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
+	steps.b = make(chan int, len(steps.List))
+	steps.e = make(chan string, len(steps.List))
 	return steps, nil
 }
