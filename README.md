@@ -18,3 +18,21 @@ Probably the easiest way to install the program into the proper place, if you ha
 `cd $GOPATH/src/github.com/slabgorb/wk`
 
 `go test -v ./...`
+
+
+#File format for input file
+A workflow file is expected to be in the following format:
+
+    command:name # comments are denoted by '#' and anything on a line after a # is ignored.
+      argumentname:value
+      argumentname:value
+      argumentname:value
+
+
+    parallelcommand:name
+     argumentname:value
+     argumentname:value
+
+    parallelcommand:name
+     argumentname:value
+     argumentname:value
