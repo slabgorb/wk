@@ -19,8 +19,6 @@ parallelcommand:name
  argumentname:value
  argumentname:value
 
-command:name  # this command will only be executed
-  argumentname:value
 
 */
 package workflow

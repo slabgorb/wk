@@ -1,13 +1,17 @@
+
+# get the TSV file 
 command:fetch
   url:https://dl.dropboxusercontent.com/s/yt7gvcdc0tihbfz/inventory.tsv?dl=0
   file:local.tsv  
 
-parallel:to_json
-  tsvfile:local.tsv
+# save the TSV as json
+parallel:to_json 
+  tsvfile:local.tsv # this is the file saved in step 1
   file:local.json
 
+# save the computed values
 parallel:aggregation
-  tsvfile:local.tsv
+  tsvfile:local.tsv 
   file:aggregations.json
 
 
